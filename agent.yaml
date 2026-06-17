@@ -1,0 +1,9 @@
+name: 甘肃高考志愿助手
+slug: sunshine
+description: 基于甘肃高考位次数据，提供冲稳保院校推荐与录取概率分析
+version: 1.0.0
+author: agent-builder
+endpoint: http://sunshine_app:80
+healthCheckPath: /health
+healthCheckInterval: 30
+model: deepseek-chat
