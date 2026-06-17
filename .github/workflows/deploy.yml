@@ -1,0 +1,84 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  APP_NAME: sunshine
+  APP_PORT: "8080"
+  REGISTRY_URL: crpi-2hhvyuuzflfxsyey.cn-beijing.personal.cr.aliyuncs.com
+  REGISTRY_NAMESPACE: chmjk12
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Aliyun Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to ECS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            docker pull ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:${{ github.sha }}
+            docker stop ${{ env.APP_NAME }} || true
+            docker rm ${{ env.APP_NAME }} || true
+            docker run -d \
+              --name ${{ env.APP_NAME }} \
+              --restart unless-stopped \
+              -p ${{ env.APP_PORT }}:80 \
+              -e CP_API_KEY=${{ secrets.API_KEY }} \
+              -e CP_BASE_URL=${{ secrets.ACP_BASE_URL }} \
+              -e AGENT_SLUG=${{ secrets.AGENT_SLUG }} \
+              -e AGENT_ID=${{ secrets.AGENT_ID }} \
+              -e DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }} \
+              -e DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }} \
+              ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:${{ github.sha }}
+            sleep 5
+            curl -f http://localhost:${{ env.APP_PORT }}/health || exit 1
+
+      - name: Notify ACP of deployment
+        run: |
+          python3 << 'PYEOF'
+          import requests
+          ACP = "https://administrator.chmjk67.top"
+          AGENT_ID = "${{ secrets.AGENT_ID }}"
+          requests.post(f"{ACP}/api/agents/{AGENT_ID}/versions", json={
+              "versionTag": "${{ github.sha }}"[0:7],
+              "codeRef": "https://github.com/chmjk12-sketch/${{ env.APP_NAME }}",
+          })
+          requests.post(f"{ACP}/api/deployments", json={
+              "agentId": AGENT_ID,
+              "gitCommit": "${{ github.sha }}",
+              "imageTag": "${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:${{ github.sha }}",
+              "slot": "blue", "trafficWeight": 100,
+              "status": "success", "triggerSource": "github_actions",
+          })
+          requests.post(f"{ACP}/api/agents/{AGENT_ID}/online")
+          PYEOF
