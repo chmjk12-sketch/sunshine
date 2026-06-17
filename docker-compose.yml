@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: sunshine_app
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./gansu_rank_db.sqlite:/app/gansu_rank_db.sqlite:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CP_API_KEY=${CP_API_KEY:-}
+      - CP_BASE_URL=${CP_BASE_URL:-https://administrator.chmjk67.top}
+      - AGENT_SLUG=${AGENT_SLUG:-sunshine}
+      - AGENT_ID=${AGENT_ID:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
