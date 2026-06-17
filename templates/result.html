@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>志愿推荐结果 - 甘肃高考志愿助手</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: #333; font-size: 22px; margin-bottom: 8px; }
+        .header .info {
+            color: #666;
+            font-size: 14px;
+        }
+        .header .info span {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 4px 12px;
+            background: white;
+            border-radius: 20px;
+        }
+        .section {
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-left: 12px;
+            border-left: 4px solid;
+        }
+        .chong .section-title { color: #e74c3c; border-color: #e74c3c; }
+        .wen .section-title { color: #f39c12; border-color: #f39c12; }
+        .bao .section-title { color: #27ae60; border-color: #27ae60; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .school-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .prob-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .prob-high { background: #d4edda; color: #155724; }
+        .prob-mid { background: #fff3cd; color: #856404; }
+        .prob-low { background: #f8d7da; color: #721c24; }
+        .meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+        .meta span {
+            background: #f8f9fa;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .reason {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .risk {
+            font-size: 13px;
+            color: #e74c3c;
+            padding: 10px;
+            background: #fdf2f2;
+            border-radius: 8px;
+            border-left: 3px solid #e74c3c;
+        }
+        .back-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 14px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>志愿推荐结果</h1>
+        <div class="info">
+            <span>位次: {{ result.candidate_rank }}</span>
+            <span>专业: {{ result.major }}</span>
+            <span>共 {{ result.total }} 所候选</span>
+        </div>
+    </div>
+
+    <div class="section chong">
+        <div class="section-title">冲刺院校 (录取概率 < 40%)</div>
+        {% if result.chong %}
+            {% for item in result.chong %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="school-name">{{ item.school_name }}</div>
+                    <div class="prob-badge prob-low">{{ item.admission_probability }}%</div>
+                </div>
+                <div class="meta">
+                    <span>专业组: {{ item.major_group_name }}</span>
+                    <span>最低分: {{ item.min_score }}</span>
+                    <span>最低位次: {{ item.min_rank }}</span>
+                    <span>平均位次: {{ item.avg_rank }}</span>
+                </div>
+                <div class="reason">{{ item.recommend_reason }}</div>
+                <div class="risk">{{ item.risk_tip }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">暂无冲刺院校推荐</div>
+        {% endif %}
+    </div>
+
+    <div class="section wen">
+        <div class="section-title">稳妥院校 (录取概率 40%-75%)</div>
+        {% if result.wen %}
+            {% for item in result.wen %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="school-name">{{ item.school_name }}</div>
+                    <div class="prob-badge prob-mid">{{ item.admission_probability }}%</div>
+                </div>
+                <div class="meta">
+                    <span>专业组: {{ item.major_group_name }}</span>
+                    <span>最低分: {{ item.min_score }}</span>
+                    <span>最低位次: {{ item.min_rank }}</span>
+                    <span>平均位次: {{ item.avg_rank }}</span>
+                </div>
+                <div class="reason">{{ item.recommend_reason }}</div>
+                <div class="risk">{{ item.risk_tip }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">暂无稳妥院校推荐</div>
+        {% endif %}
+    </div>
+
+    <div class="section bao">
+        <div class="section-title">保底院校 (录取概率 >= 75%)</div>
+        {% if result.bao %}
+            {% for item in result.bao %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="school-name">{{ item.school_name }}</div>
+                    <div class="prob-badge prob-high">{{ item.admission_probability }}%</div>
+                </div>
+                <div class="meta">
+                    <span>专业组: {{ item.major_group_name }}</span>
+                    <span>最低分: {{ item.min_score }}</span>
+                    <span>最低位次: {{ item.min_rank }}</span>
+                    <span>平均位次: {{ item.avg_rank }}</span>
+                </div>
+                <div class="reason">{{ item.recommend_reason }}</div>
+                <div class="risk">{{ item.risk_tip }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card empty">暂无保底院校推荐</div>
+        {% endif %}
+    </div>
+
+    <a href="/" class="back-btn">重新查询</a>
+</body>
+</html>
